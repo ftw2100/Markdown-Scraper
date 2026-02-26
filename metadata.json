@@ -1,0 +1,5 @@
+{
+  "name": "Cloudflare Markdown Scraper",
+  "description": "A web scraper that uses Cloudflare's Browser Rendering API to extract Markdown from any webpage.",
+  "requestFramePermissions": []
+}
