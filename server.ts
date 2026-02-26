@@ -56,6 +56,11 @@ if (process.env.NODE_ENV !== "production") {
     app.use(vite.middlewares);
   }
   setupVite();
+
+  const PORT = 3000;
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
 } else {
   app.use(express.static("dist"));
 }
