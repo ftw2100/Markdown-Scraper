@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Loader2, Globe, Key, User, FileText, AlertCircle, Check, Copy } from 'lucide-react';
+import { Loader2, Globe, Key, User, FileText, AlertCircle, Check, Copy, Bug } from 'lucide-react';
 
 export default function App() {
   const [url, setUrl] = useState('');
@@ -11,6 +11,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   // Load saved credentials on mount
   useEffect(() => {
@@ -41,6 +42,7 @@ export default function App() {
     setLoading(true);
     setError('');
     setMarkdown('');
+    setDebugInfo(null);
 
     try {
       const response = await fetch('/api/scrape', {
@@ -52,13 +54,14 @@ export default function App() {
       });
 
       const data = await response.json();
+      setDebugInfo(data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to scrape the URL');
       }
 
-      if (data.success && data.result) {
-        setMarkdown(data.result);
+      if (data.success && data.result !== undefined) {
+        setMarkdown(typeof data.result === 'string' ? data.result : JSON.stringify(data.result, null, 2));
       } else {
         throw new Error('Unexpected response format from Cloudflare API');
       }
@@ -171,24 +174,40 @@ export default function App() {
               </form>
 
               {error && (
-                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 text-red-800 text-sm">
-                  <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-500" />
-                  <div>
-                    <p className="font-semibold mb-1">Error</p>
-                    <p>{error}</p>
-                    {error.includes('Authentication') && (
-                      <div className="mt-2 text-xs text-red-700 space-y-1">
-                        <p><strong>To fix this:</strong></p>
-                        <ol className="list-decimal pl-4 space-y-1">
-                          <li>Go to Cloudflare Dashboard &gt; My Profile &gt; API Tokens</li>
-                          <li>Click "Create Token" &gt; "Create Custom Token"</li>
-                          <li>Under Permissions, select: <strong>Account</strong> | <strong>Browser Rendering</strong> | <strong>Edit</strong></li>
-                          <li>Select your Account under Account Resources</li>
-                          <li>Ensure Browser Rendering is enabled for your account (Workers & Pages &gt; Browser Rendering)</li>
-                        </ol>
-                      </div>
-                    )}
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl flex flex-col gap-3 text-red-800 text-sm">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-500" />
+                    <div className="flex-1">
+                      <p className="font-semibold mb-1">Error</p>
+                      <p>{error}</p>
+                      {error.includes('Authentication') && (
+                        <div className="mt-2 text-xs text-red-700 space-y-1">
+                          <p><strong>To fix this:</strong></p>
+                          <ol className="list-decimal pl-4 space-y-1">
+                            <li>Go to Cloudflare Dashboard &gt; My Profile &gt; API Tokens</li>
+                            <li>Click "Create Token" &gt; "Create Custom Token"</li>
+                            <li>Under Permissions, select: <strong>Account</strong> | <strong>Browser Rendering</strong> | <strong>Edit</strong></li>
+                            <li>Select your Account under Account Resources</li>
+                            <li>Ensure Browser Rendering is enabled for your account (Workers & Pages &gt; Browser Rendering)</li>
+                          </ol>
+                        </div>
+                      )}
+                    </div>
                   </div>
+                  
+                  {debugInfo && (
+                    <div className="mt-2 bg-white rounded-lg border border-red-100 overflow-hidden">
+                      <div className="bg-red-100/50 px-3 py-2 border-b border-red-100 flex items-center gap-2">
+                        <Bug className="w-4 h-4 text-red-600" />
+                        <span className="text-xs font-semibold text-red-800 uppercase tracking-wider">Raw API Response</span>
+                      </div>
+                      <div className="p-3 overflow-x-auto">
+                        <pre className="text-xs text-zinc-700 whitespace-pre-wrap break-all font-mono">
+                          {JSON.stringify(debugInfo, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
